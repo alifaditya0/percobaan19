@@ -88,6 +88,68 @@ function Mahasiswa() {
     }
   };
 
+  const [editData, setEditData] = useState({
+    id:null,
+    nama: '',
+    nrp: '',
+    id_jurusan:''
+  });
+
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  const handleShowEditModal = (data) => {
+    setEditData(data)
+    setShowEditModal(true);
+    setShow(false);
+  }
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setEditData(null);
+  }
+  const handleEditDataChange = (field, value) => {
+    setEditData((prevData) => ({
+      ...prevData,
+      [field]: value,
+    }))
+  }
+  const handleUpdate = async(e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append('id_m',editData.id_m);
+    formData.append('nama',editData.nama);
+    formData.append('nrp',editData.nrp);
+    formData.append('id_jurusan',editData.id_jurusan);
+    if(editData.gambar){
+      formData.append('gambar', editData.gambar);
+    }
+    if(editData.swa_foto){
+      formData.append('swa_foto', editData.swa_foto);
+    }
+    
+    try{
+      await axios.patch(`http://localhost:3000/api/mhs/update/${editData.id_m}`, formData, {
+      headers: {
+        'Content-Type' : 'multipart/form-data',
+      },
+    });
+    navigate('/mhs');
+    fectData();
+    setShowEditModal(false);
+    } catch(error) {
+    console.error('kesalahan : ', error);
+    setValidation(error.response.data);
+    }
+  }
+  const handleDelete = (id_m) => {
+    axios.delete(`http://localhost:3000/api/mhs/delete/${id_m}`).then((response) => {
+      console.log('data berhasil dihapus')
+      const updatedMhs = mhs.filter((item) => item.id_m !== id_m)
+      setMhs(updatedMhs)
+    }).catch((error) => {
+      console.error('gagal menghapus data ', error);
+      alert('Gagal Menghapus data');
+    })
+  }
   return (
     <Container>
       <Row>
@@ -105,9 +167,9 @@ function Mahasiswa() {
               <th scope="col">Jurusan</th>
               <th scope="col">gambar</th>
               <th scope="col">swa_foto</th>
+              <th scope="col">ACTION </th>
             </tr>
           </thead>
-
           <tbody>
             {mhs.map((mh, index) => (
               <tr>
@@ -119,6 +181,10 @@ function Mahasiswa() {
                 </td>
                 <td>
                   <img src={url + mh.swa_foto} height="100" />
+                </td>
+                <td>
+                  <button onClick={() => handleShowEditModal(mh)} className="btn btn-sm btn-info">EDIT</button>
+                  <button onClick={() => handleDelete(mh.id_m)} className='btn btn-sm btn-danger' >Hapus</button>
                 </td>
               </tr>
             ))}
@@ -161,6 +227,7 @@ function Mahasiswa() {
                 value={id_jurusan}
                 onChange={handleIdJurusanChange}
               >
+                <option>Select Option</option>
                 {jrs.map((jr) => (
                   <option key={jr.id_jurusan} value={jr.id_jurusan}>
                     {jr.nama_jurusan}
@@ -192,6 +259,48 @@ function Mahasiswa() {
               className="btn btn-primary"
             >
               Kirim
+            </button>
+          </form>
+        </Modal.Body>
+      </Modal>
+      <Modal show={showEditModal} onHide={handleCloseEditModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Edit Data</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <form onSubmit={handleUpdate}>
+            <div className="mb-3">
+              <label className="form-label">Nama : </label>
+              <input type="text" className="form-control" value={editData ? editData.nama : ''} onChange={(e) => handleEditDataChange('nama',e.target.value)}
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">NRP : </label>
+              <input type="text" className="form-control" value={editData ? editData.nrp : ''} onChange={(e) => handleEditDataChange('nrp',e.target.value)}
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Jurusan : </label>
+              <select className="form-control" value={editData ? editData.id_jurusan : ''} onChange={(e) => handleEditDataChange('id_jurusan',e.target.value)}
+              >
+                <option>Select Options</option>
+                {jrs.map((jr) => (
+                <option key={jr.id_jurusan} value={jr.id_jurusan}>{jr.nama_jurusan}</option>
+              ))}
+              </select>
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Gambar : </label>
+              <input type="file" className="form-control" accept="image/*" onChange={(e) => handleEditDataChange('gambar', e.target.files[0])}
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">swa Foto : </label>
+              <input type="file" className="form-control" accept="image/*" onChange={(e) => handleEditDataChange('swa_foto', e.target.files[0])}
+              />
+            </div>
+            <button type="submit" className="btn btn-primary">
+              simpan perubahan
             </button>
           </form>
         </Modal.Body>
